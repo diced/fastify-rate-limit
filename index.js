@@ -16,7 +16,7 @@ const serializeError = FJS({
   }
 })
 
-function rateLimitPlugin (fastify, settings, next) {
+function rateLimitPlugin(fastify, settings, next) {
   // create the object that will hold the "main" settings that can be shared during the build
   // 'global' will define, if the rate limit should be apply by default on all route. default : true
   const globalParams = {
@@ -90,15 +90,15 @@ function rateLimitPlugin (fastify, settings, next) {
         throw new Error('Unknown value for route rate-limit configuration')
       }
     } else if (globalParams.global) {
-      console.log(settings.routes, globalParams, routeOptions);
       // if the plugin is set globally ( meaning that all the route will be 'rate limited' )
       // As the endpoint, does not have a custom rateLimit configuration, use the global one.
-      buildRouteRate(pluginComponent, globalParams, routeOptions)
+      if (settings.routes.includes(routeOptions.path)) buildRouteRate(pluginComponent, globalParams, routeOptions)
+      else { }
     }
   })
 
   // Merge the parameters of a route with the global ones
-  function makeParams (routeParams) {
+  function makeParams(routeParams) {
     const result = Object.assign({}, globalParams, routeParams)
     if (typeof result.timeWindow === 'string') {
       result.timeWindow = ms(result.timeWindow)
@@ -109,7 +109,7 @@ function rateLimitPlugin (fastify, settings, next) {
   next()
 }
 
-function buildRouteRate (pluginComponent, params, routeOptions) {
+function buildRouteRate(pluginComponent, params, routeOptions) {
   const after = ms(params.timeWindow, { long: true })
 
   if (Array.isArray(routeOptions.onRequest)) {
@@ -121,7 +121,7 @@ function buildRouteRate (pluginComponent, params, routeOptions) {
   }
 
   // onRequest function that will be use for current endpoint been processed
-  function onRequest (req, res, next) {
+  function onRequest(req, res, next) {
     // We retrieve the key from the generator. (can be the global one, or the one define in the endpoint)
     const key = params.keyGenerator(req)
 
@@ -141,7 +141,7 @@ function buildRouteRate (pluginComponent, params, routeOptions) {
     // As the key is not whitelist in redis/lru, then we increment the rate-limit of the current request and we call the function "onIncr"
     pluginComponent.store.incr(key, onIncr)
 
-    function onIncr (err, { current, ttl }) {
+    function onIncr(err, { current, ttl }) {
       if (err && params.skipOnError === false) {
         return next(err)
       }
@@ -186,7 +186,7 @@ function buildRouteRate (pluginComponent, params, routeOptions) {
         res.send(params.errorResponseBuilder(req, respCtx))
       }
 
-      function getMax () {
+      function getMax() {
         if (typeof params.max === 'number') {
           return params.max
         } else {
