@@ -37,6 +37,7 @@ interface AddHeaders {
 
 export interface RateLimitPluginOptions {
   global?: boolean;
+  routes?: string[];
   max?: number | ((req: FastifyRequest, key: string) => number);
   timeWindow?: number;
   cache?: number;
